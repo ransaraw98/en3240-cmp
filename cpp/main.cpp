@@ -265,13 +265,13 @@ int main(int argc, char **argv){
 		cout<< "Too few input arguments, specifiy 1 or 2" << endl;
 		return 0;
 	}
-	
+	unsigned int operation = atoi(argv[1]);
+	//cout << "Operation " << operation << endl;	
 	//Variables for compression
 	ifstream inputf1;
 	ofstream outfile1;
 	//ofstream outfile2;
-	inputf1.open("original.txt");
-	outfile1.open("cout.txt");
+
 	//outfile2.open("read_data.txt");
 	vector<unsigned int> f1_content; 
 	vector<unsigned int> f1_sorted;	
@@ -303,16 +303,19 @@ int main(int argc, char **argv){
 	unsigned int i_ins;
 	unsigned int lastIns;
 
-if(stoul(argv[1],NULL,10)==1){
-	while(inputf1){
-		getline(inputf1, line);
+if(operation==1){
+	inputf1.open("original.txt");	
+	char line_buffer [32];
+	while(getline(inputf1, line)){
+		//getline(inputf1, line);
 		//cout << line << endl;
 		f1_content.push_back(stoul(line,NULL,2));
 		f1_sorted.push_back(stoul(line,NULL,2));
 	}
 	inputf1.close();
-	f1_content.pop_back();
-	f1_sorted.pop_back();
+	outfile1.open("cout.txt");
+	//f1_content.pop_back();
+	//f1_sorted.pop_back();
 	//cout << "Number of instructions " << f1_content.size() <<endl;
 	sortByFreq(f1_sorted);
 
@@ -616,29 +619,29 @@ if(stoul(argv[1],NULL,10)==1){
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DECOMPRESSION~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 
-if(stoul(argv[1],NULL,10)==2){
+if(operation==2){
 	ifstream inputf2;
 	inputf2.open("compressed.txt");
 	ofstream outbuffer2;
 	outbuffer2.open("dout.txt");
-	while(inputf2){
-                getline(inputf2, line);
+	while(getline(inputf2, line)){
+                //getline(inputf2, line);
                 //cout << line << endl;
                 cmpd_content.push_back(line);
         }
         inputf2.close();
 
 	//STORING DICTIONARY DATA
-	//cout << "dictionary" << endl;
+	//cout << "total size " << cmpd_content.size() << endl;
 
 	dictPointer = dict2;
-	for(int i=(cmpd_content.size()-9);i<(cmpd_content.size()-1);i++){
+	for(int i=(cmpd_content.size()-8);i<(cmpd_content.size());i++){
 		//cout 		<< cmpd_content[i]<<endl;
 		*dictPointer 	=  stoul(cmpd_content[i],NULL,2);
 		dictPointer++;
 	}	
 	
-	for(int i=0; i<(cmpd_content.size()-10); i++){ //last 9 lines are not required now
+	for(int i=0; i<(cmpd_content.size()-9); i++){ //last 9 lines are not required now
 		
 		inbuffer2 << cmpd_content[i];
 		
@@ -744,6 +747,7 @@ if(stoul(argv[1],NULL,10)==2){
 		
 		}
 		case 7:{
+			chrIdx = inbuffer2.str().length();
 			break;
 		}
 
