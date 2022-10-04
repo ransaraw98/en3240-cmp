@@ -260,32 +260,41 @@ uint32_t fourBitmask_gen(unsigned int entry, int position){
     }
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-int main(){
-	ifstream inputf1;
-	ifstream inputf2;
-	ofstream outfile1;
-	ofstream outfile2;
-	inputf1.open("original.txt");
-	inputf2.open("compressed.txt");
-	outfile1.open("pout.txt");
-	outfile2.open("read_data.txt");
-	string line;
+int main(int argc, char **argv){
+	if(argc <= 1){
+		cout<< "Too few input arguments, specifiy 1 or 2" << endl;
+		return 0;
+	}
 	
-	unsigned int dict2[8];
-	unsigned int *dictPointer;
-	stringstream inbuffer2;
-	ofstream outbuffer2;
-	outbuffer2.open("decompressed.txt");
+	//Variables for compression
+	ifstream inputf1;
+	ofstream outfile1;
+	//ofstream outfile2;
+	inputf1.open("original.txt");
+	outfile1.open("cout.txt");
+	//outfile2.open("read_data.txt");
 	vector<unsigned int> f1_content; 
 	vector<unsigned int> f1_sorted;	
-	vector<inst> histogram;
+	//vector<inst> histogram;
  	vector<string> cmpd_content;
 	vector<cmpresd> compressed;
 	inst dict[8];
 	unsigned int temp;
 	unsigned int d_idx= 0;
 
-	//variables for compressed line data
+	
+	
+	//Common variables
+	string line;
+	int repeats;
+	
+	//Variables for compression
+	unsigned int dict2[8];
+	unsigned int *dictPointer;
+	stringstream inbuffer2;
+
+	
+		//variables for compressed line data
 	unsigned int method;
 	unsigned int loc1;
 	unsigned int loc2;
@@ -294,13 +303,14 @@ int main(){
 	unsigned int i_ins;
 	unsigned int lastIns;
 
-
+if(stoul(argv[1],NULL,10)==1){
 	while(inputf1){
 		getline(inputf1, line);
 		//cout << line << endl;
 		f1_content.push_back(stoul(line,NULL,2));
 		f1_sorted.push_back(stoul(line,NULL,2));
 	}
+	inputf1.close();
 	f1_content.pop_back();
 	f1_sorted.pop_back();
 	//cout << "Number of instructions " << f1_content.size() <<endl;
@@ -350,7 +360,7 @@ int main(){
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~COMPRESSION~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 	bool first_run =1;
-	int repeats =-1;
+	repeats =-1;
 	cmpresd cmpresd_line;
 	int position;
 	for(i = 0; i < f1_content.size(); i++){
@@ -602,19 +612,21 @@ int main(){
 		outfile1 << dic << endl;
 	}
 	outfile1.close();
-	for(i=0;i<f1_content.size();i++){
-		bitset<32> line(f1_content[i]);
-                outfile2 << line << endl;
 
-	}
-
-
+}
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DECOMPRESSION~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
-while(inputf2){
+
+if(stoul(argv[1],NULL,10)==2){
+	ifstream inputf2;
+	inputf2.open("compressed.txt");
+	ofstream outbuffer2;
+	outbuffer2.open("dout.txt");
+	while(inputf2){
                 getline(inputf2, line);
                 //cout << line << endl;
                 cmpd_content.push_back(line);
         }
+        inputf2.close();
 
 	//STORING DICTIONARY DATA
 	//cout << "dictionary" << endl;
@@ -738,6 +750,8 @@ while(inputf2){
 		}
 		
 	}
+	outbuffer2.close();
 
+}
 }
 
