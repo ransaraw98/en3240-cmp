@@ -650,7 +650,7 @@ if(operation==2){
 	string cmstring = inbuffer2.str();
 	//Read the first 3 characters, convert to a numerical type, switch case
 	unsigned int chrIdx 	= 	0;
-	while(chrIdx < inbuffer2.str().length()){
+	while(chrIdx < inbuffer2.str().length()-3){	// We need to skip the last 1111.. padding
 		method 	=	stoul(cmstring.substr(chrIdx,3),NULL,2);
 		chrIdx +=3;
 		//cout	<<	"method :"	<<	method;	
