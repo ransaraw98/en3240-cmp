@@ -1,3 +1,3 @@
 # en3240-cmp
 
-The source file is located at **cpp/main.c
+The source file is cpp/main.c
