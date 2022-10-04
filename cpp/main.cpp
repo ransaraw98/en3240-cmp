@@ -262,20 +262,38 @@ uint32_t fourBitmask_gen(unsigned int entry, int position){
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~MAIN~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
 int main(){
 	ifstream inputf1;
+	ifstream inputf2;
 	ofstream outfile1;
 	ofstream outfile2;
 	inputf1.open("original.txt");
+	inputf2.open("compressed.txt");
 	outfile1.open("pout.txt");
 	outfile2.open("read_data.txt");
 	string line;
 	
+	unsigned int dict2[8];
+	unsigned int *dictPointer;
+	stringstream inbuffer2;
+	ofstream outbuffer2;
+	outbuffer2.open("decompressed.txt");
 	vector<unsigned int> f1_content; 
 	vector<unsigned int> f1_sorted;	
 	vector<inst> histogram;
- 	vector<cmpresd> compressed;
+ 	vector<string> cmpd_content;
+	vector<cmpresd> compressed;
 	inst dict[8];
 	unsigned int temp;
 	unsigned int d_idx= 0;
+
+	//variables for compressed line data
+	unsigned int method;
+	unsigned int loc1;
+	unsigned int loc2;
+	unsigned int bitmask;
+	unsigned int dct_Idx;
+	unsigned int i_ins;
+	unsigned int lastIns;
+
 
 	while(inputf1){
 		getline(inputf1, line);
@@ -285,7 +303,7 @@ int main(){
 	}
 	f1_content.pop_back();
 	f1_sorted.pop_back();
-	cout << "Number of instructions " << f1_content.size() <<endl;
+	//cout << "Number of instructions " << f1_content.size() <<endl;
 	sortByFreq(f1_sorted);
 
 	//ADD THE FIRST ENTRY TO THE DICTIONARY
@@ -364,7 +382,6 @@ int main(){
 			compressed.push_back(cmpresd_line);
 			continue;	
 		}
-		unsigned int i_ins;
 		unsigned int m_count;
 		for(j=0; j < 8; j++ ){
 		
@@ -509,19 +526,12 @@ int main(){
 		cmpresd_line.content	=	f1_content[i];
 		compressed.push_back(cmpresd_line);
 	}
-	for(int i=0; i< 8; ++i){
-
-		cout <<"Dictionary index " << i << " content : " <<  dict[i].content << endl;
-		cout <<"Dictionary index " << i << " frequency :" <<  dict[i].freq << endl;
-		cout <<"Dictionary index " << i << " index :" <<  dict[i].index << endl;
-		cout << endl;
 	
-	}
 	stringstream buffer;
 	
 	for(int i=0; i<compressed.size(); ++i){
 
-		cout << "method :" << compressed[i].method << "\t content :" << compressed[i].content << endl;		
+		//cout << "method :" << compressed[i].method << "\t content :" << compressed[i].content << endl;		
 		bitset<3> method(compressed[i].method);
 		buffer << method;
 		switch(compressed[i].method){
@@ -597,5 +607,137 @@ int main(){
                 outfile2 << line << endl;
 
 	}
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~DECOMPRESSION~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//
+while(inputf2){
+                getline(inputf2, line);
+                //cout << line << endl;
+                cmpd_content.push_back(line);
+        }
+
+	//STORING DICTIONARY DATA
+	//cout << "dictionary" << endl;
+
+	dictPointer = dict2;
+	for(int i=(cmpd_content.size()-9);i<(cmpd_content.size()-1);i++){
+		//cout 		<< cmpd_content[i]<<endl;
+		*dictPointer 	=  stoul(cmpd_content[i],NULL,2);
+		dictPointer++;
+	}	
+	
+	for(int i=0; i<(cmpd_content.size()-10); i++){ //last 9 lines are not required now
+		
+		inbuffer2 << cmpd_content[i];
+		
+	}
+	
+	string cmstring = inbuffer2.str();
+	//Read the first 3 characters, convert to a numerical type, switch case
+	unsigned int chrIdx 	= 	0;
+	while(chrIdx < inbuffer2.str().length()){
+		method 	=	stoul(cmstring.substr(chrIdx,3),NULL,2);
+		chrIdx +=3;
+		//cout	<<	"method :"	<<	method;	
+
+		if(method == 7){
+			break;
+		}
+
+		switch(method){
+
+		case 0:{
+			repeats	=	stoul(cmstring.substr(chrIdx,2),NULL,2);
+			bitset<32> content(lastIns);
+			for(int j =0; j<(repeats+1); j++){
+			outbuffer2 << content <<endl; 
+			}
+			chrIdx	+=	2;
+			break;
+		}	
+		case 1:{
+			loc1	=	stoul(cmstring.substr(chrIdx,5),NULL,2);
+			chrIdx +=	5;
+			bitmask	=	stoul(cmstring.substr(chrIdx,4),NULL,2);
+			chrIdx +=	4;
+			dct_Idx	=	stoul(cmstring.substr(chrIdx,3),NULL,2);
+			chrIdx +=	3;
+		//Decompression
+			i_ins	=	bitmask << (28-loc1);
+			i_ins	=	dict2[dct_Idx] ^ i_ins;
+			lastIns	=	i_ins;
+			bitset<32> content(i_ins);
+			outbuffer2 << content << endl;		
+			break;
+		//	cout	<<	"loc1 :" << loc1 << " bitmask :" << bitmask << " dct_Idx :" << dct_Idx << endl; 
+		}
+		case 2:{
+
+			loc1	=	stoul(cmstring.substr(chrIdx,5),NULL,2);
+			chrIdx +=	5;
+			dct_Idx	=	stoul(cmstring.substr(chrIdx,3),NULL,2);
+			chrIdx +=	3;
+			i_ins	=	1UL << (31-loc1);
+			i_ins	=	dict2[dct_Idx] ^ i_ins;
+			lastIns	=	i_ins;
+			bitset<32> content(i_ins);
+			outbuffer2	<< content <<endl;	
+			break;
+		}
+		
+		case 3:{
+
+			loc1	=	stoul(cmstring.substr(chrIdx,5),NULL,2);
+			chrIdx	+=	5;
+			dct_Idx	=	stoul(cmstring.substr(chrIdx,3),NULL,2);
+			chrIdx	+=	3;
+			i_ins	=	0b11 << (30-loc1);
+			i_ins	=	dict2[dct_Idx] ^ i_ins;
+			lastIns	=	i_ins;
+			bitset<32> content(i_ins);
+			outbuffer2	<<	content	<< endl;
+			break;
+		}
+		
+		case 4:{
+                        loc1    =       stoul(cmstring.substr(chrIdx,5),NULL,2);
+                        chrIdx +=       5;
+                        loc2    =       stoul(cmstring.substr(chrIdx,5),NULL,2);
+                        chrIdx +=	5;
+			dct_Idx =       stoul(cmstring.substr(chrIdx,3),NULL,2);
+			chrIdx +=       3;
+                        i_ins   =       1UL << (31- loc1);
+                        i_ins	=	i_ins | (1UL << (31-loc2));
+			i_ins   =       dict2[dct_Idx] ^ i_ins;
+                        lastIns =       i_ins;
+                        bitset<32> content(i_ins);
+                        outbuffer2      << content <<endl;    
+			break;
+		}
+		case 5:{
+			dct_Idx	=	stoul(cmstring.substr(chrIdx,3),NULL,2);
+			chrIdx	+=	3;
+			lastIns	=	dict2[dct_Idx];
+			bitset<32> content(lastIns);
+			outbuffer2	<< content << endl;
+			break;
+		}
+
+		case 6:{
+			lastIns	=	stoul(cmstring.substr(chrIdx,32),NULL,2);
+                        chrIdx  +=      32;
+                        bitset<32> content(lastIns);
+                        outbuffer2      << content << endl;
+			break;
+		
+		}
+		case 7:{
+			break;
+		}
+
+		}
+		
+	}
+
 }
 
