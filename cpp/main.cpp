@@ -1,3 +1,6 @@
+// On my honor, I have neither given nor received unauthorized aid on this assignment
+//180717E
+
 #include <iostream>
 #include <fstream>
 #include <string>
